@@ -9,8 +9,12 @@ call plug#begin('~/.local/share/nvim/plugged')
 " LSP и автодополнение
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
-" Подсветка синтаксиса
-Plug 'sheerun/vim-polyglot'
+" Тема JB
+Plug 'nickkadutskyi/jb.nvim'
+
+" Улучшенная подсветка синтаксиса
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter-context'
 
 " Файловый менеджер
 Plug 'preservim/nerdtree'
@@ -19,6 +23,35 @@ Plug 'preservim/nerdtree'
 Plug 'vim-airline/vim-airline'
 
 call plug#end()
+
+
+" Настройка темы JB
+lua <<EOF
+require("jb").setup({
+    theme_style = "dark",       -- dark/light
+    transparent = false,        -- прозрачный фон
+    italic_comments = true,     -- курсив в комментариях
+    italic_keywords = false,    -- курсив для ключевых слов
+    italic_functions = false,   -- курсив для функций
+    italic_variables = false,   -- курсив для переменных
+})
+EOF
+
+" Включение темы
+set termguicolors
+colorscheme jb
+
+" Настройка Tree-sitter для улучшенной подсветки
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = {"c", "cpp", "lua", "python", "rust", "markdown"},
+  highlight = {
+    enable = true,
+    additional_vim_regex_highlighting = false,
+  },
+  indent = { enable = true },
+}
+EOF
 
 set number
 syntax enable
