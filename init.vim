@@ -27,14 +27,7 @@ call plug#end()
 
 " Настройка темы JB
 lua <<EOF
-require("jb").setup({
-    theme_style = "dark",       -- dark/light
-    transparent = false,        -- прозрачный фон
-    italic_comments = true,     -- курсив в комментариях
-    italic_keywords = false,    -- курсив для ключевых слов
-    italic_functions = false,   -- курсив для функций
-    italic_variables = false,   -- курсив для переменных
-})
+require("jb").setup()
 EOF
 
 " Включение темы
