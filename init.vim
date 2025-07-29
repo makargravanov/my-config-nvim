@@ -22,6 +22,11 @@ Plug 'preservim/nerdtree'
 " Статусная строка
 Plug 'vim-airline/vim-airline'
 
+" Отладка
+Plug 'mfussenegger/nvim-dap'
+Plug 'rcarriga/nvim-dap-ui'
+Plug 'theHamsta/nvim-dap-virtual-text' " Показ значений переменных
+
 call plug#end()
 
 
@@ -33,6 +38,8 @@ EOF
 " Включение темы
 set termguicolors
 colorscheme jb
+
+let mapleader = " "
 
 " Настройка Tree-sitter для улучшенной подсветки
 lua <<EOF
@@ -70,3 +77,75 @@ autocmd VimEnter * NERDTree | wincmd p
 "горячие клавиши
 nnoremap <C-n> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
+
+
+" ------------------------------------- НАСТРОЙКА LLDB
+lua <<EOF
+local dap = require('dap')
+
+-- Проверяем доступность codelldb
+local codelldb_path = '/usr/bin/codelldb'
+if vim.fn.executable(codelldb_path) == 1 then
+  dap.adapters.codelldb = {
+    type = 'server',
+    port = '${port}',
+    executable = {
+      command = codelldb_path,
+      args = {'--port', '${port}'},
+    }
+  }
+
+  -- Конфигурация для C/C++
+  dap.configurations.cpp = {
+    {
+      name = "Launch Debug",
+      type = "codelldb",
+      request = "launch",
+      program = function()
+        return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+      end,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = true,
+      args = {},
+    },
+  }
+  dap.configurations.c = dap.configurations.cpp
+else
+  vim.notify("codelldb not found at: " .. codelldb_path, vim.log.levels.WARN)
+end
+
+vim.api.nvim_set_hl(0, "blue",   { fg = "#3d59a1" }) 
+vim.api.nvim_set_hl(0, "green",  { fg = "#9ece6a" }) 
+vim.api.nvim_set_hl(0, "yellow", { fg = "#FFFF00" }) 
+vim.api.nvim_set_hl(0, "orange", { fg = "#f09000" })
+vim.api.nvim_set_hl(0, "red",    { fg = "#ff0000" })
+
+vim.fn.sign_define('DapBreakpoint', { text = '🛑', texthl = 'red', linehl = 'red', numhl = '' })
+vim.fn.sign_define('DapStopped', { text = '->', texthl = 'green', linehl = 'green', numhl = '' })
+
+-- Инициализация DAP UI только если плагин установлен
+local ok, dapui = pcall(require, 'dapui')
+if ok then
+  dapui.setup()
+ 
+  dap.listeners.after.event_initialized["dapui_config"] = function()
+    dapui.open()
+  end
+  dap.listeners.before.event_terminated["dapui_config"] = function()
+    dapui.close()
+  end
+  dap.listeners.before.event_exited["dapui_config"] = function()
+    dapui.close()
+  end
+end
+EOF
+
+" Хоткеи отладки
+nnoremap <silent> <F5> :lua require'dap'.continue()<CR>
+nnoremap <silent> <F10> :lua require'dap'.step_over()<CR>
+nnoremap <silent> <F11> :lua require'dap'.step_into()<CR>
+nnoremap <silent> <F12> :lua require'dap'.step_out()<CR>
+nnoremap <silent> <leader>b :lua require'dap'.toggle_breakpoint()<CR>
+nnoremap <silent> <leader>B :lua require'dap'.set_breakpoint(vim.fn.input('Breakpoint condition: '))<CR>
+nnoremap <silent> <leader>dr :lua require'dap'.repl.open()<CR>
+nnoremap <silent> <leader>du :lua require'dapui'.toggle()<CR>
